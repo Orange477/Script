@@ -3,22 +3,22 @@ using UnityEngine;
 public class SimpleHandController : MonoBehaviour
 {
     [Header("Depth Mapping")]
-    public float zMin = 0.3f;       // Äá¼v¾÷«e 0.3m
-    public float zMax = 1.5f;       // Äá¼v¾÷«e 1.5m
-    public float zRawMin = -0.02f;  // MediaPipe ³Ì¾aªñ¬Û¾÷ªº z ­È
-    public float zRawMax = -0.20f;  // MediaPipe ³Ì»·Â÷¬Û¾÷ªº z ­È
+    public float zMin = 0.3f;       // æ”å½±æ©Ÿå‰ 0.3m
+    public float zMax = 1.5f;       // æ”å½±æ©Ÿå‰ 1.5m
+    public float zRawMin = -0.02f;  // MediaPipe æœ€é è¿‘ç›¸æ©Ÿçš„ z å€¼
+    public float zRawMax = -0.20f;  // MediaPipe æœ€é é›¢ç›¸æ©Ÿçš„ z å€¼
 
     [Header("Depth Sensitivity Curve")]
-    [Tooltip("X ¶b¡G²`«×¡]0¡÷zMin, 1¡÷zMax¡^¡AY ¶b¡G©ñ¤j­¿¼Æ¡C")]
+    [Tooltip("X è»¸ï¼šæ·±åº¦ï¼ˆ0â†’zMin, 1â†’zMaxï¼‰ï¼ŒY è»¸ï¼šæ”¾å¤§å€æ•¸ã€‚")]
     public AnimationCurve sensitivityCurve = AnimationCurve.Linear(0f, 1f, 1f, 1f);
 
-    [Header("Hand Anchor (¤÷ª«¥ó)")]
-    public Transform anchor; // ¡ö ³o¸Ì©ì¤J Anchor ªÅª«¥ó
+    [Header("Hand Anchor (çˆ¶ç‰©ä»¶)")]
+    public Transform anchor; // â† é€™è£¡æ‹–å…¥ Anchor ç©ºç‰©ä»¶
 
-    [Header("°¾²¾·L½Õ")]
-    public Vector3 manualOffset = Vector3.zero; // ¥ı²M¹s¡AÁ×§K¼vÅT¶ZÂ÷§PÂ_ 
+    [Header("åç§»å¾®èª¿")]
+    public Vector3 manualOffset = Vector3.zero; // å…ˆæ¸…é›¶ï¼Œé¿å…å½±éŸ¿è·é›¢åˆ¤æ–· 
 
-    [Header("Z ±±¨î¿ï¶µ")]
+    [Header("Z æ§åˆ¶é¸é …")]
     public bool forceFixedDepth = false;
     public float fixedDepth = 1.0f;
 
@@ -33,15 +33,15 @@ public class SimpleHandController : MonoBehaviour
 
         if (anchor != null)
         {
-            // §â¥@¬É®y¼ĞÂà¦¨¬Û¹ï Anchor ªº®y¼Ğ
+            // æŠŠä¸–ç•Œåº§æ¨™è½‰æˆç›¸å° Anchor çš„åº§æ¨™
             Vector3 localPos = anchor.InverseTransformPoint(worldPos);
 
-            // ¥[¤W¤â¼Ò«¬ªº¤â°Ê·L½Õ
+            // åŠ ä¸Šæ‰‹æ¨¡å‹çš„æ‰‹å‹•å¾®èª¿
             transform.localPosition = localPos + manualOffset;
         }
         else
         {
-            // ¨S³] Anchor¡Aª½±µ¥Î¥@¬É®y¼Ğ
+            // æ²’è¨­ Anchorï¼Œç›´æ¥ç”¨ä¸–ç•Œåº§æ¨™
             transform.position = worldPos + manualOffset;
 
             Debug.Log($"[ApplyLandmarks] {gameObject.name} worldPos = {transform.position}");
