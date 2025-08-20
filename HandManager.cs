@@ -5,15 +5,15 @@ public class HandManager : MonoBehaviour
 {
     public static HandManager instance;
 
-    [Header("¥ª¤â±±¨î¾¹¡]²yÅé¡^")]
+    [Header("å·¦æ‰‹æ§åˆ¶å™¨ï¼ˆçƒé«”ï¼‰")]
     public SimpleHandController leftHandController;
 
-    [Header("¥k¤â±±¨î¾¹¡]²yÅé¡^")]
+    [Header("å³æ‰‹æ§åˆ¶å™¨ï¼ˆçƒé«”ï¼‰")]
     public SimpleHandController rightHandController;
 
     private ConcurrentQueue<HandData[]> handDataQueue = new ConcurrentQueue<HandData[]>();
 
-    // ·s¼W¡G¦s¥Ø«e¥ª¤â¡B¥k¤â®y¼Ğ
+    // æ–°å¢ï¼šå­˜ç›®å‰å·¦æ‰‹ã€å³æ‰‹åº§æ¨™123
     private Landmark[] currentLeftLandmarks;
     private Landmark[] currentRightLandmarks;
 
@@ -57,18 +57,18 @@ public class HandManager : MonoBehaviour
                 if (hand.handedness == "Left" && leftHandController != null)
                 {
                     leftHandController.ApplyLandmarks(hand.landmarks);
-                    currentLeftLandmarks = hand.landmarks; // °O¦í¥ª¤â®y¼Ğ
+                    currentLeftLandmarks = hand.landmarks; // è¨˜ä½å·¦æ‰‹åº§æ¨™
                 }
                 else if (hand.handedness == "Right" && rightHandController != null)
                 {
                     rightHandController.ApplyLandmarks(hand.landmarks);
-                    currentRightLandmarks = hand.landmarks; // °O¦í¥k¤â®y¼Ğ
+                    currentRightLandmarks = hand.landmarks; // è¨˜ä½å³æ‰‹åº§æ¨™
                 }
             }
         }
     }
 
-    // ·s¼W¡G¨ú±o¬Y°¦¤âªº landmark
+    // æ–°å¢ï¼šå–å¾—æŸéš»æ‰‹çš„ landmark
     public Landmark[] GetLandmarks(bool isLeftHand = true)
     {
         return isLeftHand ? currentLeftLandmarks : currentRightLandmarks;
