@@ -25,7 +25,7 @@ public class HandTrackingLauncher : MonoBehaviour
         string exePath = Path.Combine(Application.streamingAssetsPath, "Mediapipe/HandTracking.exe");
         if (!File.Exists(exePath))
         {
-            UnityEngine.Debug.LogError("§ä¤£¨ì HandTracking.exe");
+            UnityEngine.Debug.LogError("æ‰¾ä¸åˆ° HandTracking.exe");
             return;
         }
 
@@ -61,7 +61,7 @@ public class HandTrackingLauncher : MonoBehaviour
             }
         }
         stream = tcpClient.GetStream();
-        UnityEngine.Debug.Log("TCP ³s½u¦¨¥\¡I");
+        UnityEngine.Debug.Log("TCP é€£ç·šæˆåŠŸï¼");
         _ = ReceiveDataAsync();
     }
 
@@ -76,13 +76,13 @@ public class HandTrackingLauncher : MonoBehaviour
             }
             catch
             {
-                UnityEngine.Debug.LogError("³s½uÅª¨ú¥¢±Ñ");
+                UnityEngine.Debug.LogError("é€£ç·šè®€å–å¤±æ•—");
                 break;
             }
 
             if (length == 0)
             {
-                UnityEngine.Debug.LogWarning("³s½u¤wÃö³¬");
+                UnityEngine.Debug.LogWarning("é€£ç·šå·²é—œé–‰");
                 break;
             }
 
@@ -114,7 +114,7 @@ public class HandTrackingLauncher : MonoBehaviour
         }
         catch (System.Exception e)
         {
-            UnityEngine.Debug.LogError("JSON ¸ÑªR¿ù»~: " + e.Message);
+            UnityEngine.Debug.LogError("JSON è§£æéŒ¯èª¤: " + e.Message);
         }
     }
 
