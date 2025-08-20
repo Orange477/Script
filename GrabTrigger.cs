@@ -3,17 +3,17 @@ using System.Collections.Generic;
 
 public class GrabTrigger : MonoBehaviour
 {
-    public float grabRange = 10f; // §ì¨ú¶ZÂ÷
-    public Transform handTransform; // ¤âªº Transform
-    public HandManager handManager; // ¤â³¡ºŞ²z¾¹¡A´£¨Ñ¤â«üÂI¸ê°T
+    public float grabRange = 10f; // æŠ“å–è·é›¢
+    public Transform handTransform; // æ‰‹çš„ Transform
+    public HandManager handManager; // æ‰‹éƒ¨ç®¡ç†å™¨ï¼Œæä¾›æ‰‹æŒ‡é»è³‡è¨Š
 
     private GameObject heldObject = null;
-    private static GameObject globallyHeldObject = null; // ¥ş§½°ß¤@³Q§ìª«¥ó
+    private static GameObject globallyHeldObject = null; // å…¨å±€å”¯ä¸€è¢«æŠ“ç‰©ä»¶
     private Dictionary<GameObject, (Vector3 pos, Quaternion rot)> originalTransforms = new Dictionary<GameObject, (Vector3, Quaternion)>();
 
     private void Start()
     {
-        // ¨Æ¥ı§ä¨ì©Ò¦³¦³ Ladle ¼ĞÅÒªºª««~¡A°O¿ı¥L­Ìªºªì©l¦ì¸m©M±ÛÂà
+        // äº‹å…ˆæ‰¾åˆ°æ‰€æœ‰æœ‰ Ladle æ¨™ç±¤çš„ç‰©å“ï¼Œè¨˜éŒ„ä»–å€‘çš„åˆå§‹ä½ç½®å’Œæ—‹è½‰
         var ladles = GameObject.FindGameObjectsWithTag("Ladle");
         foreach (var ladle in ladles)
         {
@@ -22,12 +22,12 @@ public class GrabTrigger : MonoBehaviour
     }
     private void OnTriggerStay(Collider other)
     {
-        if (heldObject != null) return; // ¤w§ì¨úª««~®É¤£Ä~Äò§ì
+        if (heldObject != null) return; // å·²æŠ“å–ç‰©å“æ™‚ä¸ç¹¼çºŒæŠ“
 
         Transform current = other.transform;
         GameObject target = null;
 
-        // §ä¨ì¦³ Ladle ¼ĞÅÒªº¤÷ª«¥ó
+        // æ‰¾åˆ°æœ‰ Ladle æ¨™ç±¤çš„çˆ¶ç‰©ä»¶
         while (current != null)
         {
             if (current.CompareTag("Ladle"))
@@ -49,7 +49,7 @@ public class GrabTrigger : MonoBehaviour
         Vector3 closestPointOnTarget = targetCollider.ClosestPoint(handPos);
         float distance = Vector3.Distance(handPos, closestPointOnTarget);
 
-        if (distance > grabRange) return; // ¶W¹L§ì¨ú½d³ò¤£§ì
+        if (distance > grabRange) return; // è¶…éæŠ“å–ç¯„åœä¸æŠ“
 
         if (IsPinching())
         {
@@ -59,7 +59,7 @@ public class GrabTrigger : MonoBehaviour
 
     private void Update()
     {
-        // ©ñ¶}ª««~±ø¥ó¡G¤w§ì¥B¤£¦A®º¦X
+        // æ”¾é–‹ç‰©å“æ¢ä»¶ï¼šå·²æŠ“ä¸”ä¸å†æåˆ
         if (heldObject != null && !IsPinching())
         {
             ReleaseObject();
@@ -68,19 +68,19 @@ public class GrabTrigger : MonoBehaviour
 
     private void GrabObject(GameObject target)
     {
-        if (globallyHeldObject != null) return; // ¨ä¥L¤â¤w§ìª«¥ó®É¸õ¹L
+        if (globallyHeldObject != null) return; // å…¶ä»–æ‰‹å·²æŠ“ç‰©ä»¶æ™‚è·³é
 
         heldObject = target;
         globallyHeldObject = target;
 
         heldObject.transform.SetParent(handTransform);
 
-        // ª««~¦ì¸mÂk¹s¡]¬Û¹ï¤âªº¦ì¸m¡^
+        // ç‰©å“ä½ç½®æ­¸é›¶ï¼ˆç›¸å°æ‰‹çš„ä½ç½®ï¼‰
         heldObject.transform.localPosition = Vector3.zero;
 
-        // ª««~±ÛÂà³]©w¬°¸ò¤â¦P¨B¡]¥i·L½Õ¡^
+        // ç‰©å“æ—‹è½‰è¨­å®šç‚ºè·Ÿæ‰‹åŒæ­¥ï¼ˆå¯å¾®èª¿ï¼‰
         heldObject.transform.rotation = handTransform.rotation;
-        // ­Yª««~¤è¦V¿ù¡A¥i¥H¸Õ¸Õ¥H¤U·L½Õ¨¤«×
+        // è‹¥ç‰©å“æ–¹å‘éŒ¯ï¼Œå¯ä»¥è©¦è©¦ä»¥ä¸‹å¾®èª¿è§’åº¦
         heldObject.transform.rotation = handTransform.rotation * Quaternion.Euler(-90, 0, 0);
 
         Rigidbody rb = heldObject.GetComponent<Rigidbody>();
@@ -90,7 +90,7 @@ public class GrabTrigger : MonoBehaviour
             rb.useGravity = false;
         }
 
-        Debug.Log("§ì¨ú¡G" + heldObject.name);
+        Debug.Log("æŠ“å–ï¼š" + heldObject.name);
     }
 
     private void ReleaseObject()
@@ -106,7 +106,7 @@ public class GrabTrigger : MonoBehaviour
             rb.useGravity = true;
         }
 
-        Debug.Log("©ñ¶}¡G" + heldObject.name);
+        Debug.Log("æ”¾é–‹ï¼š" + heldObject.name);
 
         heldObject = null;
         globallyHeldObject = null;
@@ -124,7 +124,7 @@ public class GrabTrigger : MonoBehaviour
 
         float pinchDist = Vector3.Distance(thumb, index);
 
-        Debug.Log($"©æ«ü»P­¹«ü¶ZÂ÷: {pinchDist}, ¬O§_§ì¨ú: {pinchDist < 0.3f}");
+        Debug.Log($"æ‹‡æŒ‡èˆ‡é£ŸæŒ‡è·é›¢: {pinchDist}, æ˜¯å¦æŠ“å–: {pinchDist < 0.3f}");
 
         return pinchDist < 0.3f;
     }
