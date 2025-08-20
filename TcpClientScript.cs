@@ -13,13 +13,13 @@ public class TcpClientScript : MonoBehaviour
 
     public bool IsConnected => client != null && client.Connected;
 
-    public event Action<string> OnDataReceived; // ¦¬¨ì¸ê®Æ¨Æ¥ó
+    public event Action<string> OnDataReceived; // æ”¶åˆ°è³‡æ–™äº‹ä»¶
 
     public void Connect(string host, int port)
     {
         if (IsConnected)
         {
-            Debug.LogWarning("¤w¸g³s½u¡AµL»İ­«½Æ³s½u");
+            Debug.LogWarning("å·²ç¶“é€£ç·šï¼Œç„¡éœ€é‡è¤‡é€£ç·š");
             return;
         }
 
@@ -33,12 +33,12 @@ public class TcpClientScript : MonoBehaviour
             receiveThread.IsBackground = true;
             receiveThread.Start();
 
-            Debug.Log("¦¨¥\³s½u¨ì HandTracking.exe¡I");
+            Debug.Log("æˆåŠŸé€£ç·šåˆ° HandTracking.exeï¼");
             
         }
         catch (SocketException e)
         {
-            Debug.LogError("TCP ³s½u¥¢±Ñ: " + e.Message);
+            Debug.LogError("TCP é€£ç·šå¤±æ•—: " + e.Message);
         }
     }
 
@@ -66,7 +66,7 @@ public class TcpClientScript : MonoBehaviour
         }
         catch (Exception e)
         {
-            Debug.LogWarning("±µ¦¬¸ê®Æµo¥Í¿ù»~: " + e.Message);
+            Debug.LogWarning("æ¥æ”¶è³‡æ–™ç™¼ç”ŸéŒ¯èª¤: " + e.Message);
         }
     }
 
