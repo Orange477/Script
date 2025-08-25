@@ -1,33 +1,29 @@
 using UnityEngine;
-using System.Collections.Generic;
 
 public class GrabTrigger : MonoBehaviour
 {
-    public float grabRange = 10f; // 抓取距離
-    public Transform handTransform; // 手的 Transform
-    public HandManager handManager; // 手部管理器，提供手指點資訊
+    public string grabTag = "Ladle"; // Inspector 設定抓取物件的 Tag
+    public Vector3 grabRotationEuler = new Vector3(0, 0, 0);
+    public float grabRange = 0.4f; // 抓取距離
+    public Transform handTransform; // 手的位置
+    public HandManager handManager;  // Mediapipe 的 handManager
+
+    [Header("抓取點")]
+    public Transform grabPoint; // 手心抓取點，用空物件放在手心
 
     private GameObject heldObject = null;
-    private static GameObject globallyHeldObject = null; // 全局唯一被抓物件
-    private Dictionary<GameObject, (Vector3 pos, Quaternion rot)> originalTransforms = new Dictionary<GameObject, (Vector3, Quaternion)>();
+    private static GameObject globallyHeldObject = null;
 
-    private void Start()
-    {
-        // 事先找到所有有 Ladle 標籤的物品，記錄他們的初始位置和旋轉
-        var ladles = GameObject.FindGameObjectsWithTag("Ladle");
-        foreach (var ladle in ladles)
-        {
-            originalTransforms[ladle] = (ladle.transform.position, ladle.transform.rotation);
-        }
-    }
+    private Vector3 originalPos;
+    private Quaternion originalRot;
+
     private void OnTriggerStay(Collider other)
     {
-        if (heldObject != null) return; // 已抓取物品時不繼續抓
+        if (heldObject != null) return; // 已抓取物品就不抓
 
+        // 找標籤為 Ladle 的父物件
         Transform current = other.transform;
         GameObject target = null;
-
-        // 找到有 Ladle 標籤的父物件
         while (current != null)
         {
             if (current.CompareTag("Ladle"))
@@ -40,18 +36,17 @@ public class GrabTrigger : MonoBehaviour
 
         if (target == null) return;
 
-        Vector3 handPos = handTransform.position;
-        Vector3 targetPos = target.transform.position;
-
+        Vector3 handPos = grabPoint.position; // 用抓取點判定距離
         Collider targetCollider = target.GetComponent<Collider>();
         if (targetCollider == null) return;
 
         Vector3 closestPointOnTarget = targetCollider.ClosestPoint(handPos);
         float distance = Vector3.Distance(handPos, closestPointOnTarget);
 
-        if (distance > grabRange) return; // 超過抓取範圍不抓
+        if (distance > grabRange) return;
 
-        if (IsPinching())
+        // 握拳抓取
+        if (IsFist())
         {
             GrabObject(target);
         }
@@ -59,8 +54,12 @@ public class GrabTrigger : MonoBehaviour
 
     private void Update()
     {
-        // 放開物品條件：已抓且不再捏合
-        if (heldObject != null && !IsPinching())
+        // 每幀輸出手部狀態
+        float avgDist = GetFingerAvgDist();
+        Debug.Log($"{handTransform.name} 手指平均距離: {avgDist}, 握拳: {IsFist()}, 張開: {IsPalmOpen()}");
+
+        // 張開放下
+        if (heldObject != null && IsPalmOpen())
         {
             ReleaseObject();
         }
@@ -68,27 +67,24 @@ public class GrabTrigger : MonoBehaviour
 
     private void GrabObject(GameObject target)
     {
-        if (globallyHeldObject != null) return; // 其他手已抓物件時跳過
+        if (globallyHeldObject != null) return;
 
         heldObject = target;
         globallyHeldObject = target;
 
-        heldObject.transform.SetParent(handTransform);
+        originalPos = heldObject.transform.position;
+        originalRot = heldObject.transform.rotation;
 
-        // 物品位置歸零（相對手的位置）
+        // 把物品 attach 到抓取點
+        heldObject.transform.SetParent(grabPoint);
         heldObject.transform.localPosition = Vector3.zero;
+        heldObject.transform.localRotation = Quaternion.identity;
 
-        // 物品旋轉設定為跟手同步（可微調）
-        heldObject.transform.rotation = handTransform.rotation;
-        // 若物品方向錯，可以試試以下微調角度
-        heldObject.transform.rotation = handTransform.rotation * Quaternion.Euler(-90, 0, 0);
+        // 使用 Inspector 可調旋轉
+        heldObject.transform.localRotation = Quaternion.Euler(grabRotationEuler);
 
         Rigidbody rb = heldObject.GetComponent<Rigidbody>();
-        if (rb != null)
-        {
-            rb.isKinematic = true;
-            rb.useGravity = false;
-        }
+        if (rb != null) rb.isKinematic = true;
 
         Debug.Log("抓取：" + heldObject.name);
     }
@@ -100,32 +96,43 @@ public class GrabTrigger : MonoBehaviour
         heldObject.transform.SetParent(null);
 
         Rigidbody rb = heldObject.GetComponent<Rigidbody>();
-        if (rb != null)
-        {
-            rb.isKinematic = false;
-            rb.useGravity = true;
-        }
+        if (rb != null) rb.isKinematic = false; // 允許掉落或受物理影響
 
-        Debug.Log("放開：" + heldObject.name);
+        // 回到原本位置
+        heldObject.transform.position = originalPos;
+        heldObject.transform.rotation = originalRot;
+
+        Debug.Log("放開並回到原位：" + heldObject.name);
 
         heldObject = null;
         globallyHeldObject = null;
     }
 
-    private bool IsPinching()
+    private float GetFingerAvgDist()
     {
-        if (handManager == null) return false;
+        var landmarks = handManager.GetLandmarks(handTransform.name.Contains("Left"));
+        if (landmarks == null || landmarks.Length < 21) return 0f;
 
-        var landmarks = handManager.GetLandmarks();
-        if (landmarks == null || landmarks.Length < 9) return false;
+        Vector3 palm = new Vector3(landmarks[0].x, landmarks[0].y, landmarks[0].z);
+        float sum = 0f;
+        int[] tips = { 8, 12, 16, 20 };
+        foreach (int tip in tips)
+        {
+            Vector3 tipPos = new Vector3(landmarks[tip].x, landmarks[tip].y, landmarks[tip].z);
+            sum += Vector3.Distance(palm, tipPos);
+        }
+        return sum / tips.Length;
+    }
 
-        Vector3 thumb = new Vector3(landmarks[4].x, landmarks[4].y, landmarks[4].z);
-        Vector3 index = new Vector3(landmarks[8].x, landmarks[8].y, landmarks[8].z);
+    private bool IsFist()
+    {
+        float avgDist = GetFingerAvgDist();
+        return avgDist < 0.25f;
+    }
 
-        float pinchDist = Vector3.Distance(thumb, index);
-
-        Debug.Log($"拇指與食指距離: {pinchDist}, 是否抓取: {pinchDist < 0.3f}");
-
-        return pinchDist < 0.3f;
+    private bool IsPalmOpen()
+    {
+        float avgDist = GetFingerAvgDist();
+        return avgDist > 0.35f;
     }
 }
