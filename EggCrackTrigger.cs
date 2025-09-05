@@ -7,7 +7,7 @@ public class EggCrackTrigger : MonoBehaviour
     public Transform handTransform;
 
     [Header("蛋模型")]
-    public GameObject uncookedEggPrefab; // 指定 uncooked.fbx 預製物
+    public GameObject uncookedEggPrefab; // 指定 uncooked.fbx 預製物1
     public Transform panTransform;       // 指定平底鍋的位置
 
     private bool isCracked = false;
