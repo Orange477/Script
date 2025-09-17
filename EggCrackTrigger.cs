@@ -1,47 +1,51 @@
 using UnityEngine;
+using Leap.Unity.Interaction;
 
 public class EggCrackTrigger : MonoBehaviour
 {
-    [Header("手部偵測")]
-    public HandManager handManager;
+    [Header("手部與手模型")]
+    public InteractionHand hand;
     public Transform handTransform;
 
     [Header("蛋模型")]
-    public GameObject uncookedEggPrefab; // 指定 uncooked.fbx 預製物1
-    public Transform panTransform;       // 指定平底鍋的位置
+    public GameObject uncookedEggPrefab;
+    public Transform panTransform;
 
     private bool isCracked = false;
-
+    private Vector3 lastHandPos;
+    private float lastTime;
+    private int a = 0;
     void Update()
-    {
-        if (isCracked) return;
+    { 
+        if (isCracked || hand == null || handTransform == null) return;
+        if(!hand.isTracked) return;
+        // ✅ 只有當蛋是被抓取的物件時，才開始偵測揮動
+        if (GrabTrigger.heldObject == this.gameObject)
+        {
+            if (a < 100)
+            {
+                Debug.Log(GrabTrigger.heldObject);
+                a++;
+            }
+            else
+            {
+                Debug.Log(" 蛋被抓取中 ，你太強了");
+            }
+        }
+        else
+        {
+            Debug.Log(GrabTrigger.heldObject);
+            Debug.Log(this.gameObject);
+            Debug.Log("一定是黃騰毅的錯");
+            return;
+        }
 
-        // 只偵測上下揮動
+
         if (DetectDownwardSwing())
         {
             CrackEgg();
         }
     }
-
-    // 偵測食指和中指向上，其他向下
-    bool DetectCrackGesture()
-    {
-        var landmarks = handManager.GetLandmarks(handTransform.name.Contains("Left"));
-        if (landmarks == null || landmarks.Length < 21) return false;
-
-        // 食指(8)和中指(12) tip 高於掌心(0)，其他(16, 20)低於掌心
-        float palmY = landmarks[0].y;
-        bool indexUp = landmarks[8].y > palmY;
-        bool middleUp = landmarks[12].y > palmY;
-        bool ringDown = landmarks[16].y < palmY;
-        bool pinkyDown = landmarks[20].y < palmY;
-
-        return indexUp && middleUp && ringDown && pinkyDown;
-    }
-
-    // 偵測手由上往下揮（y軸速度為負）
-    Vector3 lastHandPos;
-    float lastTime;
 
     bool DetectDownwardSwing()
     {
@@ -57,17 +61,14 @@ public class EggCrackTrigger : MonoBehaviour
         lastHandPos = currentPos;
         lastTime = currentTime;
 
-        // y軸速度小於 -0.5 視為揮下
         return velocityY < -0.5f;
     }
 
     void CrackEgg()
     {
         isCracked = true;
-        // 隱藏原蛋
         gameObject.SetActive(false);
 
-        // 生成未熟蛋到平底鍋
         if (uncookedEggPrefab != null && panTransform != null)
         {
             Instantiate(uncookedEggPrefab, panTransform.position, Quaternion.identity);
