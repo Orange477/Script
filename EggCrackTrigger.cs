@@ -10,36 +10,27 @@ public class EggCrackTrigger : MonoBehaviour
     [Header("蛋模型")]
     public GameObject uncookedEggPrefab;
     public Transform panTransform;
-
     private bool isCracked = false;
     private Vector3 lastHandPos;
     private float lastTime;
     private int a = 0;
     void Update()
-    { 
+    {
         if (isCracked || hand == null || handTransform == null) return;
-        if(!hand.isTracked) return;
-        // ✅ 只有當蛋是被抓取的物件時，才開始偵測揮動
-        if (GrabTrigger.heldObject == this.gameObject)
+        if (!hand.isTracked) return;
+
+        if (handTransform.childCount > 0)
         {
-            if (a < 100)
+            Transform grabbed = handTransform.GetChild(0);
+            if (grabbed != null && grabbed.name == "egg")
             {
-                Debug.Log(GrabTrigger.heldObject);
-                a++;
+                Debug.Log("YEAHHHHHHH");
             }
             else
             {
-                Debug.Log(" 蛋被抓取中 ，你太強了");
+                return;
             }
         }
-        else
-        {
-            Debug.Log(GrabTrigger.heldObject);
-            Debug.Log(this.gameObject);
-            Debug.Log("一定是黃騰毅的錯");
-            return;
-        }
-
 
         if (DetectDownwardSwing())
         {
@@ -60,7 +51,6 @@ public class EggCrackTrigger : MonoBehaviour
 
         lastHandPos = currentPos;
         lastTime = currentTime;
-
         return velocityY < -0.5f;
     }
 
@@ -73,7 +63,6 @@ public class EggCrackTrigger : MonoBehaviour
         {
             Instantiate(uncookedEggPrefab, panTransform.position, Quaternion.identity);
         }
-
         Debug.Log("蛋已打入鍋中！");
     }
 }
