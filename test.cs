@@ -149,7 +149,7 @@ public class CookingGameManager : MonoBehaviour
                     float flavorValue = seasonSlider.value;
                     Debug.Log($"調味完成！最終數值: {flavorValue}");
 
-                    // 👉 例子：判斷調味是否完美
+                    // 判斷調味是否完美
                     if (flavorValue >= 0.4f && flavorValue <= 0.6f)
                         Debug.Log("完美調味！");
                     else
