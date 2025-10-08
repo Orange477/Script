@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 public class SliderController : MonoBehaviour
 {
-    public Slider slider;
+    public Slider handle;
     public float speed = 1.0f;   // 滑桿移動速度
     private bool goingUp = true;
     public bool isRunning = false;  // 是否啟動滑桿

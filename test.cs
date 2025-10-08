@@ -41,7 +41,7 @@ public class CookingGameManager : MonoBehaviour
     public GameObject rawFoodModel;
     public GameObject cookingFoodModel;
     public GameObject cookedFoodModel;
-    public GameObject overcookedFoodModel;
+    //public GameObject overcookedFoodModel;
     private GameObject currentFoodModel;
 
     // 食譜步驟
