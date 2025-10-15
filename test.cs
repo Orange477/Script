@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;   // 引用 UI
+using Mono.Data.Sqlite; // 引用 SQLite
+using System.Data;      // 引用數據庫相關
 
 public enum GestureType
 {
@@ -41,19 +43,15 @@ public class CookingGameManager : MonoBehaviour
     public GameObject rawFoodModel;
     public GameObject cookingFoodModel;
     public GameObject cookedFoodModel;
-    //public GameObject overcookedFoodModel;
+    public GameObject overcookedFoodModel;
     private GameObject currentFoodModel;
+
+    // 新增：用來顯示步驟描述的 UI Text
+    public Text instructionText;
 
     // 食譜步驟
     private CookingStep currentStep = CookingStep.PrepareIngredients;
-    private Dictionary<CookingStep, string> stepInstructions = new Dictionary<CookingStep, string>
-    {
-        { CookingStep.PrepareIngredients, "請抓取食材並放入鍋中" },
-        { CookingStep.AddToPan, "將食材放入鍋中" },
-        { CookingStep.StirFry, "開始翻炒食材" },
-        { CookingStep.Season, "添加調味料" },
-        { CookingStep.Complete, "烹飪完成！" }
-    };
+    private Dictionary<CookingStep, string> stepInstructions = new Dictionary<CookingStep, string>();
 
     // 食物熟度相關參數
     private float cookingTime = 0f;
@@ -79,7 +77,14 @@ public class CookingGameManager : MonoBehaviour
 
     void Start()
     {
+        // 從資料庫載入步驟描述
+        stepInstructions = LoadStepsFromDB();
+
+        // 顯示初始步驟
+        if (instructionText != null)
+            instructionText.text = stepInstructions[currentStep];
         Debug.Log(stepInstructions[currentStep]);
+
         SetFoodModel(foodState);
 
         if (seasonSlider != null)
@@ -101,6 +106,8 @@ public class CookingGameManager : MonoBehaviour
                 {
                     Debug.Log("食材已抓取，進入下一步");
                     currentStep = CookingStep.AddToPan;
+                    if (instructionText != null)
+                        instructionText.text = stepInstructions[currentStep];
                     Debug.Log(stepInstructions[currentStep]);
                 }
                 break;
@@ -110,6 +117,8 @@ public class CookingGameManager : MonoBehaviour
                 {
                     Debug.Log("食材已放入鍋中，開始翻炒");
                     currentStep = CookingStep.StirFry;
+                    if (instructionText != null)
+                        instructionText.text = stepInstructions[currentStep];
                     Debug.Log(stepInstructions[currentStep]);
                 }
                 break;
@@ -128,6 +137,8 @@ public class CookingGameManager : MonoBehaviour
                     {
                         Debug.Log("翻炒完成，進入調味步驟");
                         currentStep = CookingStep.Season;
+                        if (instructionText != null)
+                            instructionText.text = stepInstructions[currentStep];
                         Debug.Log(stepInstructions[currentStep]);
 
                         // 顯示調味 Panel & 啟動滑桿
@@ -147,18 +158,23 @@ public class CookingGameManager : MonoBehaviour
                         sliderController.StopSlider();
 
                     float flavorValue = seasonSlider.value;
-                    Debug.Log($"調味完成！最終數值: {flavorValue}");
+                    Debug.Log($"調味完成！");
 
                     // 判斷調味是否完美
                     if (flavorValue >= 0.4f && flavorValue <= 0.6f)
                         Debug.Log("完美調味！");
+
+                    if (flavorValue > 0.14 && flavorValue <= 0.14 || flavorValue >= 0.66 && flavorValue <= 0.88)
+                        Debug.Log("好像有點鹹...");
                     else
-                        Debug.Log("調味不理想...");
+                        Debug.Log("太鹹啦!!!");
 
                     if (seasonPanel != null)
                         seasonPanel.SetActive(false);
 
                     currentStep = CookingStep.Complete;
+                    if (instructionText != null)
+                        instructionText.text = stepInstructions[currentStep];
                     Debug.Log(stepInstructions[currentStep]);
                 }
                 break;
@@ -228,5 +244,55 @@ public class CookingGameManager : MonoBehaviour
 
         if (currentFoodModel != null)
             currentFoodModel.SetActive(true);
+    }
+
+    // 從資料庫載入步驟的方法（假設資料庫檔案在 Assets/cooking.db，且表名為 Steps）
+    private Dictionary<CookingStep, string> LoadStepsFromDB()
+    {
+        Dictionary<CookingStep, string> dict = new Dictionary<CookingStep, string>();
+        Dictionary<int, List<string>> temp = new Dictionary<int, List<string>>();
+
+        string dbPath = "URI=file:" + Application.dataPath + "/cooking.db"; // 資料庫路徑（需自行放置檔案）
+
+        using (IDbConnection connection = new SqliteConnection(dbPath))
+        {
+            connection.Open();
+            using (IDbCommand cmd = connection.CreateCommand())
+            {
+                cmd.CommandText = "SELECT step_number, description FROM Steps ORDER BY step_number";
+                using (IDataReader reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        int stepNum = reader.GetInt32(0);
+                        string desc = reader.GetString(1);
+                        if (!temp.ContainsKey(stepNum))
+                            temp[stepNum] = new List<string>();
+                        temp[stepNum].Add(desc);
+                    }
+                }
+            }
+        }
+
+        // 處理每個 step_number 的描述（如果多個，合併成一個字串）
+        foreach (var kv in temp)
+        {
+            int num = kv.Key;
+            string combined;
+            if (num == 1)
+            {
+                combined = "備料步驟:\n" + string.Join("\n", kv.Value);
+            }
+            else
+            {
+                combined = string.Join("\n", kv.Value);
+            }
+
+            // 假設 step_number 1 對應 PrepareIngredients (enum 值 0)，以此類推
+            CookingStep step = (CookingStep)(num - 1);
+            dict.Add(step, combined);
+        }
+
+        return dict;
     }
 }
