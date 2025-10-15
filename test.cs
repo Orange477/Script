@@ -43,7 +43,6 @@ public class CookingGameManager : MonoBehaviour
     public GameObject rawFoodModel;
     public GameObject cookingFoodModel;
     public GameObject cookedFoodModel;
-    public GameObject overcookedFoodModel;
     private GameObject currentFoodModel;
 
     // 新增：用來顯示步驟描述的 UI Text
