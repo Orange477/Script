@@ -161,10 +161,10 @@ public class CookingGameManager : MonoBehaviour
                     Debug.Log($"調味完成！");
 
                     // 判斷調味是否完美
-                    if (flavorValue >= 0.4f && flavorValue <= 0.6f)
+                    if (flavorValue >= 0.36 && flavorValue <= 0.66)
                         Debug.Log("完美調味！");
 
-                    if (flavorValue > 0.14 && flavorValue <= 0.14 || flavorValue >= 0.66 && flavorValue <= 0.88)
+                    if (flavorValue > 0.14 && flavorValue < 0.36 || flavorValue >= 0.66 && flavorValue <= 0.88)
                         Debug.Log("好像有點鹹...");
                     else
                         Debug.Log("太鹹啦!!!");
