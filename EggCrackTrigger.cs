@@ -13,33 +13,53 @@ public class EggCrackTrigger : MonoBehaviour
     private bool isCracked = false;
     private Vector3 lastHandPos;
     private float lastTime;
+    private bool wasMovingUp = false; // 判斷是否先往上
     private int a = 0;
+    private bool isEggInHand = false;
+
+    [Header("抓取點")]
+    public Transform grabPoint;
+
     void Update()
     {
-        if (isCracked || hand == null || handTransform == null) return;
-        if (!hand.isTracked) return;
-
-        if (handTransform.childCount > 0)
+        
+        if (isCracked)
         {
-            Transform grabbed = handTransform.GetChild(0);
-            if (grabbed != null && grabbed.name == "egg")
+            Debug.Log("打出來了");
+            return;
+        }
+
+        // 每次都重設
+        isEggInHand = false;
+        Debug.Log("子物件數量" +grabPoint.childCount);
+        // 判斷是否抓到蛋
+        for (int i = 0; i < grabPoint.childCount; i++)
+        {
+            Transform child = grabPoint.GetChild(i);
+            Debug.Log("forloop 執行中");
+            if (child.CompareTag("egg"))
             {
-                Debug.Log("YEAHHHHHHH");
-            }
-            else
-            {
-                return;
+                isEggInHand = true;
+                Debug.Log("有瞜");
+                break;
             }
         }
+
+        if (!isEggInHand)
+        {
+            Debug.Log("手上沒有蛋，無法打蛋");
+           return;
+        } 
 
         if (DetectDownwardSwing())
         {
             CrackEgg();
         }
-    }
+}
 
     bool DetectDownwardSwing()
     {
+        Debug.Log("打蛋偵測執行中");
         Vector3 currentPos = handTransform.position;
         float currentTime = Time.time;
 
@@ -47,15 +67,22 @@ public class EggCrackTrigger : MonoBehaviour
         if (lastTime > 0f)
         {
             velocityY = (currentPos.y - lastHandPos.y) / (currentTime - lastTime);
+            Debug.Log("velocityY: " + velocityY + ", wasMovingUp: " + wasMovingUp);
+            if (velocityY < -3.0f)
+            { 
+                return true;
+            }
         }
 
         lastHandPos = currentPos;
         lastTime = currentTime;
-        return velocityY < -0.5f;
+        return false;
     }
 
     void CrackEgg()
     {
+        Debug.Log("開打");
+        if (isCracked) return;
         isCracked = true;
         gameObject.SetActive(false);
 
