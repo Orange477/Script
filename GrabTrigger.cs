@@ -14,16 +14,18 @@ public class GrabTrigger : MonoBehaviour
     public Vector3 grabOffset = Vector3.zero;
     public Vector3 grabRotationEuler = Vector3.zero;
 
-    public GameObject heldObject;
+    public  GameObject heldObject;
     public Rigidbody heldRb = null;
     public Vector3 originalPosition;
     public Quaternion originalRotation;
     public Transform originalParent;
     public Collider other;
-    private bool isHolding = false;
+    public bool isHolding = false;
+    public bool isHoldingEGG = false;
+    public bool isHoldingLADLE = false;
     private float releaseCooldown = 0.2f;
     private float releaseTimer = 0f;
-
+    private Vector3 originalScale;
 
     void Start()
     {
@@ -39,7 +41,7 @@ public class GrabTrigger : MonoBehaviour
 
     public void Update()
     {
-        Debug.Log("Update 執行中，子物件數：" + grabPoint.childCount);
+        
         string name = "無";
         if (grabPoint.childCount > 0 && isHolding == true)
         {
@@ -93,8 +95,7 @@ public class GrabTrigger : MonoBehaviour
         Hand leapHand = hand.leapHand;
         Transform current = other.transform;
         GameObject target = null;
-        Debug.Log("Tag是何方神聖：" + other.tag);
-        Debug.Log("開始尋找目標物件，初始物件：" + current.name + "，Tag：" + current.tag);
+        
         while (current != null)
         {
             for (int i = 0; i < grabTags.Length; i++)
@@ -119,22 +120,29 @@ public class GrabTrigger : MonoBehaviour
             current = current.parent;
         }
         if (target == null) return;
+        if (isHoldingEGG == true && current.name == "egg") return;
+        if( isHoldingLADLE == true && current.name == "Ladle") return;
         GrabObject(target);
     }
 
 
     public void GrabObject(GameObject obj)
     {
-        Debug.Log("GrabObject 被呼叫：" + obj.name + "，Tag：" + obj.tag);
-         
         heldObject = obj;
         heldRb = heldObject.GetComponent<Rigidbody>();
-        if (isHolding) return;// 已經抓著物件，忽略新的抓取請求
+        if (isHolding == true && heldObject.name == "egg")
+        {
+            isHoldingEGG = true;
+        }
+        else if (isHolding == true && heldObject.name == "Ladle")
+        {
+            isHoldingLADLE = true;
+        }
         // ✅ 記錄原始世界座標與父物件
         originalPosition = obj.transform.position;
         originalRotation = obj.transform.rotation;
         originalParent = obj.transform.parent;
-        Debug.Log("抓取物件原始座標: " + originalPosition);
+        
         if (heldRb != null)
         {
             heldRb.velocity = Vector3.zero;
@@ -146,10 +154,7 @@ public class GrabTrigger : MonoBehaviour
         heldObject.transform.localPosition = grabOffset;
         heldObject.transform.localRotation = Quaternion.Euler(grabRotationEuler);
 
-        isHolding = true;
-
-        Debug.Log("抓取並吸附：" + heldObject.name);
-        Debug.Log("grabPoint 世界座標: " + grabPoint.position);
+        isHolding = true;     
     }
 
 
@@ -168,7 +173,7 @@ public class GrabTrigger : MonoBehaviour
             heldRb.angularVelocity = Vector3.zero;
             heldRb.isKinematic = true; // ✅ 保持 kinematic，不掉落
         }
-        Debug.Log("放開物件並回原位：" + heldObject.name);
+       
 
         heldObject = null;
         heldRb = null;
