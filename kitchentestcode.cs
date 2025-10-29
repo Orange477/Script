@@ -164,9 +164,9 @@ public class CookingGameManager : MonoBehaviour
                         Debug.Log("完美調味！");
 
                     if (flavorValue > 0.14 && flavorValue < 0.36 || flavorValue >= 0.66 && flavorValue <= 0.88)
-                        Debug.Log("好像有點鹹...");
+                        Debug.Log("手滑多了一點...");
                     else
-                        Debug.Log("太鹹啦!!!");
+                        Debug.Log("太多啦!!!");
 
                     if (seasonPanel != null)
                         seasonPanel.SetActive(false);
