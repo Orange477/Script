@@ -10,18 +10,27 @@ public class AutoScrollbarController : MonoBehaviour
         public float min;           // 區間最小值（包含）
         public float max;           // 區間最大值（包含）
         public string text;         // 顯示文字
-        [HideInInspector] public bool isActive;
     }
 
     [Tooltip("從小到大排列，範圍必須覆蓋 0~1")]
-    public ValueRangeText[] rangeTexts = new ValueRangeText[]
-    {
-        new ValueRangeText { min = 0.0f, max = 0.135f, text = "低" },
-        new ValueRangeText { min = 0.135f, max = 0.343f, text = "中" },
-        new ValueRangeText { min = 0.343f, max = 0.66f, text = "完美" },
-        new ValueRangeText { min = 0.87f, max = 1.0f, text = "低" },
-        new ValueRangeText { min = 0.66f, max = 0.87f, text = "中" }
-    };
+    private string currentRangeText = "";
+    private void UpdateRangeText()
+{
+    float v = scrollbar.value;               // 當前值 0~1
+    string result = "未知";
+    
+    if (v >= 0.0f   && v <= 0.135f)  result = "低";
+    else if (v > 0.135f && v <= 0.343f)  result = "中";
+    else if (v > 0.343f && v <= 0.66f)   result = "完美";
+    else if (v > 0.66f  && v <= 0.87f)   result = "中";
+    else if (v > 0.87f  && v <= 1.0f)    result = "低";
+    
+    currentRangeText = result;
+
+    // 顯示在 UI
+    if (rangeDisplayText != null)
+        rangeDisplayText.text = result;
+}
 
     [Header("自動移動設定")]
     public float moveSpeed = 0.7f;     // 每秒變化多少 (0~1)
@@ -43,7 +52,8 @@ public class AutoScrollbarController : MonoBehaviour
     void Start()
     {
         StartMoving();
-        UpdateStatusText();
+        statusText.text = "運行中… (按空白鍵暫停)";
+        
     }
 
     void Update()
@@ -59,17 +69,24 @@ public class AutoScrollbarController : MonoBehaviour
     // 公開方法：外部呼叫（例如按鈕）
     // ──────────────────────────────────────
     public void TogglePause()
-    {
-        isMoving = !isMoving;
+{
+    isMoving = !isMoving;
 
-        if (isMoving)
-            StartMoving();
-        else
-            StopMoving();
+    if (isMoving)
+        StartMoving();
+    else
+        StopMoving();
 
-        UpdateStatusText();
-        Debug.Log(isMoving ? "Scrollbar 繼續移動" : "Scrollbar 已暫停");
-    }
+        // 暫停時立刻更新區間文字
+        UpdateRangeText();
+
+    // 運行中只顯示「運行中…」
+    
+    if (isMoving && statusText != null)
+        statusText.text = "運行中… (按空白鍵暫停)";
+    else
+        statusText.text = $"{currentRangeText}";
+}
 
     public void ResetAndStart()
     {
@@ -77,8 +94,6 @@ public class AutoScrollbarController : MonoBehaviour
         scrollbar.value = 0f;
         isMoving = true;
         StartMoving();
-        UpdateStatusText();
-        rangeDisplayText();
     }
 
     // ──────────────────────────────────────
@@ -138,16 +153,6 @@ public class AutoScrollbarController : MonoBehaviour
 
             scrollbar.value = value;
             yield return null; // 每幀更新
-        }
-    }
-
-    private void UpdateStatusText()
-    {
-        if (statusText != null)
-        {
-            statusText.text = isMoving
-                ? "運行中… (按空白鍵暫停)"
-                : "已暫停 (按空白鍵繼續)";
         }
     }
 
