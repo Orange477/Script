@@ -35,11 +35,11 @@ public class AutoScrollbarController : MonoBehaviour
     float v = scrollbar.value;               // 當前值 0~1
     string result = "未知";
     
-    if (v >= 0.0f   && v <= 0.135f)  result = "低";
-    else if (v > 0.135f && v <= 0.343f)  result = "中";
+    if (v >= 0.0f   && v <= 0.135f)  result = "沒什麼味道...?";
+    else if (v > 0.135f && v <= 0.343f)  result = "好像有點淡...";
     else if (v > 0.343f && v <= 0.66f)   result = "完美";
-    else if (v > 0.66f  && v <= 0.87f)   result = "中";
-    else if (v > 0.87f  && v <= 1.0f)    result = "低";
+    else if (v > 0.66f  && v <= 0.87f)   result = "好像多了點...";
+    else if (v > 0.87f  && v <= 1.0f)    result = "太多啦!!!";
     
     currentRangeText = result;
 
