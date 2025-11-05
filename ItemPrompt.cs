@@ -33,6 +33,8 @@ public class ItemPrompt : MonoBehaviour
     private bool handIsTouching = false;
 
     private bool promptIsActive = false; // 追蹤提示是否正在顯示
+    private bool Isfivefinished = false;
+    private bool IsCatchfinished = false;
 
     // Start is called before the first frame update
 
@@ -51,33 +53,27 @@ public class ItemPrompt : MonoBehaviour
     void Update()
 
     {
-
+        Debug.Log("ItemPrompt Update 執行中");
         if (handIsTouching)
-
         {
 
-        touchTimer += Time.deltaTime;
+            touchTimer += Time.deltaTime;
             if (touchTimer >= requiredTouchTime)
 
             {
 
                 if (promptIsActive)
-
                 {
-
-                    // 1. 達到 5 秒，隱藏第一個提示 (例如：請將手保持在物品上五秒。)
-
                     hintSequencer.HideHint();
-
                     promptIsActive = false;
-
-                    hintSequencer.ShowCongrats("非常好", 3.0f); // 顯示 "你好棒" 3 秒
-
+                    Isfivefinished = true;
                 }
-
-
-
-                // 停止計時，等待下次接觸1
+                if (Isfivefinished)
+                {
+                    hintSequencer.ShowHint("接下來請試著打蛋", 3.0f);
+                    Isfivefinished = false; // 確保只顯示一次
+                }
+                // 停止計時，等待下次接觸
 
                 handIsTouching = false;
 
@@ -96,17 +92,18 @@ public class ItemPrompt : MonoBehaviour
             }
 
         }
+        else
+        {
+            Debug.Log("手部未接觸物品");
+        }
 
     }
 
     private void OnTriggerEnter(Collider other)
-
     {
-
         if (other.CompareTag(handTag))
-
         {
-
+            Debug.Log("手進入碰撞區域");
             if (!promptIsActive)
 
             {
@@ -138,17 +135,10 @@ public class ItemPrompt : MonoBehaviour
     {
 
         if (other.CompareTag(handTag)== false)
-
         {
-
             // 中途離開，重置狀態和計時器1
-
             handIsTouching = false;
-
             touchTimer = 0f;
-
         }
-
     }
-
 }
