@@ -11,6 +11,22 @@ public class AutoScrollbarController : MonoBehaviour
         public float max;           // 區間最大值（包含）
         public string text;         // 顯示文字
     }
+    [Header("自動關閉 Canvas")]
+    public Canvas targetCanvas;
+    public float autoCloseDelay = 2f;
+    private bool hasFirstPaused = false;
+    private bool isClosing = false;
+
+    private IEnumerator AutoCloseCanvas(float delay)
+    {
+        isClosing = true;
+        yield return new WaitForSeconds(delay);
+
+        if (targetCanvas != null)
+            targetCanvas.gameObject.SetActive(false);
+
+        isClosing = false;
+    }
 
     [Tooltip("從小到大排列，範圍必須覆蓋 0~1")]
     private string currentRangeText = "";
@@ -51,11 +67,22 @@ public class AutoScrollbarController : MonoBehaviour
 
     void Start()
     {
+        if (targetCanvas == null)
+        targetCanvas = GetComponentInParent<Canvas>();
         StartMoving();
-        statusText.text = "運行中… (按空白鍵暫停)";
+        statusText.text = "運行中… ";
         
     }
 
+   /* void Start()
+{
+    if (targetCanvas == null)
+        targetCanvas = GetComponentInParent<Canvas>();
+
+    StartMoving();
+    if (statusText != null)
+        statusText.text = "運行中… (按空白鍵暫停)";
+}*/
     void Update()
     {
         // 空白鍵切換 播放 / 暫停
@@ -68,25 +95,61 @@ public class AutoScrollbarController : MonoBehaviour
     // ──────────────────────────────────────
     // 公開方法：外部呼叫（例如按鈕）
     // ──────────────────────────────────────
-    public void TogglePause()
-{
-    isMoving = !isMoving;
+    /*public void TogglePause()
+    {
+        isMoving = !isMoving;
 
-    if (isMoving)
-        StartMoving();
-    else
-        StopMoving();
+        if (isMoving)
+            StartMoving();
+        else
+            StopMoving();
 
         // 暫停時立刻更新區間文字
         UpdateRangeText();
 
-    // 運行中只顯示「運行中…」
-    
-    if (isMoving && statusText != null)
-        statusText.text = "運行中… (按空白鍵暫停)";
-    else
-        statusText.text = $"{currentRangeText}";
-}
+        // 運行中只顯示「運行中…」
+
+        if (isMoving && statusText != null)
+            statusText.text = "運行中… (按空白鍵暫停)";
+        else
+            statusText.text = $"{currentRangeText}";
+    }*/
+
+    public void TogglePause()
+    {
+        isMoving = !isMoving;
+
+        if (isMoving)
+        {
+            StartMoving();
+
+            // 如果正在倒數關閉，取消它
+            if (isClosing)
+            {
+                StopCoroutine("AutoCloseCanvas");
+                isClosing = false;
+            }
+
+            if (statusText != null)
+                statusText.text = "運行中… (按空白鍵暫停)";
+        }
+        else
+        {
+            StopMoving();
+            UpdateRangeText();  // 顯示當前區間
+
+            if (statusText != null)
+                statusText.text = $"{currentRangeText}";
+
+            // === 第一次暫停：啟動 2 秒後關閉 Canvas ===
+            if (!hasFirstPaused && targetCanvas != null)
+            {
+                hasFirstPaused = true;
+                StartCoroutine(AutoCloseCanvas(autoCloseDelay));
+            }
+        }
+    }
+
 
     public void ResetAndStart()
     {
