@@ -1,108 +1,98 @@
 using UnityEngine;
 using Leap.Unity.Interaction;
 using Leap;
+using Leap.Unity; // 為了使用 ToVector3
+
 
 public class GrabTrigger : MonoBehaviour
 {
     [Header("手部與手模型")]
     public InteractionHand hand; // 指定 InteractionHand
-    public Transform grabPoint;  // 抓取位置
+    public Transform grabPoint;  // 抓取位置（最好是手掌上的空物件）
+    
 
     [Header("抓取設定")]
-    public string[] grabTags = new string[] {"Ladle","egg"};
-    public float grabRange = 0.4f;
-    public Vector3 grabOffset = Vector3.zero;
-    public Vector3 grabRotationEuler = Vector3.zero;
+    public string[] grabTags = new string[] { "Ladle", "egg" };
+    public float gripThreshold = 0.8f; // 握拳判定閾值
+    public float grabRange = 0.4f; // OnTriggerStay 判斷抓取範圍
+    public Vector3 grabOffset = Vector3.zero; // 抓取時的本地位移
+    public Vector3 grabRotationEuler = Vector3.zero; // 抓取時的本地旋轉
 
-    public  GameObject heldObject;
-    public Rigidbody heldRb = null;
-    public Vector3 originalPosition;
-    public Quaternion originalRotation;
-    public Transform originalParent;
-    public Collider other;
+    public GameObject heldObject;
+    private Rigidbody heldRb = null;
+    private Transform originalParent;
+    private Vector3 originalScale; // 新增：紀錄原始縮放
+
     public bool isHolding = false;
     public bool isHoldingEGG = false;
     public bool isHoldingLADLE = false;
     private float releaseCooldown = 0.2f;
     private float releaseTimer = 0f;
-    private Vector3 originalScale;
 
     void Start()
     {
-        Debug.Log("1");
+        
+        // 確保 grabPoint 已設定
+        if (grabPoint == null)
+        {
+            Debug.LogError("GrabPoint 未設定！請將一個子物件拖曳進 Inspector。");
+        }
+        
+        // 確保 InteractionBehaviour 存在且停用自動抓取
         InteractionBehaviour ib = GetComponent<InteractionBehaviour>();
         if (ib != null)
         {
-            ib.throwHandler = null;       // 停用丟擲邏輯
-            ib.ignoreGrasping = true;     // 停用 SDK 的自動抓取
+            ib.throwHandler = null;       // 停用丟擲邏輯
+            ib.ignoreGrasping = true;     // 停用 SDK 的自動抓取
         }
     }
 
 
     public void Update()
     {
-        
-        string name = "無";
-        if (grabPoint.childCount > 0 && isHolding == true)
-        {
-            Hand leapHand = hand.leapHand;
-            {
-                bool OBJInGrabPoint()
-                {
-                    for (int i = 0; i < grabPoint.childCount; i++)
-                    {
-                        Transform child = grabPoint.GetChild(i);
-                        foreach (var tag in grabTags)
-                        {
-                            if (child.CompareTag(tag) || child.name.ToLower().Contains(tag))
-                            {
-                                name = child.name;
-                                return true;
-                            }
-                        }
-                    }
-                    return false;
-                }
-                
-                if (OBJInGrabPoint())
-                {
-                    Debug.Log("目前抓著的物件：" + name);
-                }
+        if (hand == null || hand.leapHand == null) return;
 
-                if (leapHand != null)
+        Hand leapHand = hand.leapHand;
+        float gripStrength = leapHand.GrabStrength;
+
+        if (isHolding)
+        {
+            // --- 釋放邏輯 (在抓取狀態下才檢查) ---
+            if (gripStrength < gripThreshold)
+            {
+                releaseTimer += Time.deltaTime;
+                if (releaseTimer >= releaseCooldown)
                 {
-                    if (leapHand.GrabStrength < 0.8f)
-                    {
-                        releaseTimer += Time.deltaTime;
-                        if (releaseTimer > releaseCooldown)
-                        {
-                            ReleaseObject();
-                            releaseTimer = 0f;
-                            return;
-                        }
-                    }
-                    else
-                    {
-                        releaseTimer = 0f; // 重置計時器1
-                    }
+                    ReleaseObject();
+                    releaseTimer = 0f;
                 }
+            }
+            else
+            {
+                // 持續握拳，重置計時器
+                releaseTimer = 0f;
             }
         }
     }
 
     public void OnTriggerStay(Collider other)
     {
-        Hand leapHand = hand.leapHand;
-        Transform current = other.transform;
+        if (isHolding) return; // 已經抓著物件，跳過
+
+        // 檢查握拳強度，是否達到抓取閾值
+        if (hand == null || hand.leapHand == null || hand.leapHand.GrabStrength < gripThreshold) return;
+
+
         GameObject target = null;
-        
+        Transform current = other.transform;
+
+        // 往上檢查父層級的 Tag
         while (current != null)
         {
-            for (int i = 0; i < grabTags.Length; i++)
+            foreach (var tag in grabTags)
             {
-                string tag = grabTags[i];
-                Debug.Log("正在檢查 Tag：" + tag + " 是否與目前物件 " + current.name + " 的 Tag " + current.tag + " 相符");
-                if (tag == current.tag)
+                // 檢查 Tag 或名稱是否符合 (為了更靈活)
+                if (current.CompareTag(tag) || current.name.ToLower().Contains(tag.ToLower()))
                 {
                     target = current.gameObject;
                     break;
@@ -110,19 +100,16 @@ public class GrabTrigger : MonoBehaviour
             }
             if (target != null)
             {
-                Debug.Log("找到目標物件：" + target.name + "，Tag：" + target.tag);
+                // 找到了
                 break;
-            }
-            else
-            {
-                Debug.Log("目前物件 " + current.name + " 的 Tag " + current.tag + " 不在抓取列表中");
             }
             current = current.parent;
         }
-        if (target == null) return;
-        if (isHoldingEGG == true && current.name == "egg") return;
-        if( isHoldingLADLE == true && current.name == "Ladle") return;
-        GrabObject(target);
+
+        if (target != null)
+        {
+            GrabObject(target);
+        }
     }
 
 
@@ -130,53 +117,70 @@ public class GrabTrigger : MonoBehaviour
     {
         heldObject = obj;
         heldRb = heldObject.GetComponent<Rigidbody>();
-        if (isHolding == true && heldObject.name == "egg")
-        {
-            isHoldingEGG = true;
-        }
-        else if (isHolding == true && heldObject.name == "Ladle")
-        {
-            isHoldingLADLE = true;
-        }
-        // ✅ 記錄原始世界座標與父物件
-        originalPosition = obj.transform.position;
-        originalRotation = obj.transform.rotation;
+
+        // 1. 紀錄原始狀態 (Parent 和 Scale)
         originalParent = obj.transform.parent;
-        
+        originalScale = obj.transform.localScale;
+
         if (heldRb != null)
         {
             heldRb.velocity = Vector3.zero;
             heldRb.angularVelocity = Vector3.zero;
-            heldRb.isKinematic = true; // ✅ 禁用物理，穩定吸附
+            heldRb.isKinematic = true; // 禁用物理，穩定吸附
         }
-
+        
+        // 2. 設置父物件、位置和旋轉
+        // worldPositionStays: false 意即使用本地座標
         heldObject.transform.SetParent(grabPoint, worldPositionStays: false);
         heldObject.transform.localPosition = grabOffset;
         heldObject.transform.localRotation = Quaternion.Euler(grabRotationEuler);
 
-        isHolding = true;     
+        // 3. 確保縮放不會因為父物件縮放而改變
+        heldObject.transform.localScale = Vector3.one; 
+
+        // 4. 更新狀態
+        isHolding = true;
+        if (heldObject.name.ToLower().Contains("egg"))
+        {
+            isHoldingEGG = true;
+            
+        }
+        else if (heldObject.name.ToLower().Contains("ladle"))
+        {
+            isHoldingLADLE = true;
+            
+        }
+        Debug.Log("成功抓取物件：" + obj.name);
     }
 
 
     public void ReleaseObject()
     {
         if (heldObject == null) return;
-        {
-            heldObject.transform.SetParent(null); // 解除抓取點
-            heldObject.transform.position = originalPosition;
-            heldObject.transform.rotation = originalRotation;
-            //heldObject.transform.SetParent(originalParent); // 還原階層
-        }
+
+        // 1. 還原父物件
+        heldObject.transform.SetParent(originalParent, worldPositionStays: true);
+
+        // 2. 還原縮放
+        heldObject.transform.localScale = originalScale;
+
         if (heldRb != null)
         {
+            // 3. 恢復物理 (讓它掉落)
+            heldRb.isKinematic = false;
+
+            // 4. 重設速度 (可選，避免殘留的速度讓物件亂飛)
             heldRb.velocity = Vector3.zero;
             heldRb.angularVelocity = Vector3.zero;
-            heldRb.isKinematic = true; // ✅ 保持 kinematic，不掉落
         }
-       
+
+        // 5. 重設狀態
+        if (heldObject.name.ToLower().Contains("egg")) isHoldingEGG = false;
+        else if (heldObject.name.ToLower().Contains("ladle")) isHoldingLADLE = false;
 
         heldObject = null;
         heldRb = null;
-        isHolding = false; // <--- 加這行
+        isHolding = false;
+        Debug.Log("釋放物件");
     }
 }
