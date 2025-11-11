@@ -15,7 +15,7 @@ public class ItemPrompt : MonoBehaviour
     // 將 HintSequencer 腳本所在的物件 (例如 UIManager) 拖曳到此欄位
 
     public HintSequencer hintSequencer;
-
+    public slider flavoringUI;
 
 
     [Header("接觸設定")]
@@ -134,11 +134,41 @@ public class ItemPrompt : MonoBehaviour
 
     {
 
-        if (other.CompareTag(handTag)== false)
+        if (other.CompareTag(handTag) == false)
         {
             // 中途離開，重置狀態和計時器1
             handIsTouching = false;
             touchTimer = 0f;
         }
     }
+   private IEnumerator ShowFlavoringPromptAndStart()
+    {
+        // 顯示提示 3 秒
+        hintSequencer.ShowHint("現在來調味吧！", 3.0f);
+        yield return new WaitForSeconds(3.0f);
+
+        // 啟動你的調味 Slider
+        slider flavoringUI = FindObjectOfType<slider>();
+        if (flavoringUI != null)
+        {
+            flavoringUI.Start();  // 呼叫開始調味
+            Debug.Log("調味UI已啟動！");
+        }
+        else
+        {
+            Debug.LogWarning("找不到 slider！請確認場景中有此腳本");
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
 }

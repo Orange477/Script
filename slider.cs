@@ -63,7 +63,7 @@ public class AutoScrollbarController : MonoBehaviour
     void Update()
     {
         // 空白鍵切換 播放 / 暫停
-        if (Input.GetKeyDown(KeyCode.Space))
+        if (Input.GetKeyDown(KeyCode.Space))  //FIXME:改成辨識手勢
         {
             TogglePause();
         }
