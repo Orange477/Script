@@ -11,22 +11,7 @@ public class AutoScrollbarController : MonoBehaviour
         public float max;           // 區間最大值（包含）
         public string text;         // 顯示文字
     }
-    [Header("自動關閉 Canvas")]
-    public Canvas targetCanvas;
-    public float autoCloseDelay = 2f;
-    private bool hasFirstPaused = false;
-    private bool isClosing = false;
-
-    private IEnumerator AutoCloseCanvas(float delay)
-    {
-        isClosing = true;
-        yield return new WaitForSeconds(delay);
-
-        if (targetCanvas != null)
-            targetCanvas.gameObject.SetActive(false);
-
-        isClosing = false;
-    }
+    
 
     [Tooltip("從小到大排列，範圍必須覆蓋 0~1")]
     private string currentRangeText = "";
@@ -119,7 +104,23 @@ public class AutoScrollbarController : MonoBehaviour
             }
         }
     }
+    
+    [Header("自動關閉 Canvas")]
+    public Canvas targetCanvas;
+    public float autoCloseDelay = 2f;
+    private bool hasFirstPaused = false;
+    private bool isClosing = false;
 
+    private IEnumerator AutoCloseCanvas(float delay)
+    {
+        isClosing = true;
+        yield return new WaitForSeconds(delay);
+
+        if (targetCanvas != null)
+            targetCanvas.gameObject.SetActive(false);
+
+        isClosing = false;
+    }
 
     public void ResetAndStart()
     {
