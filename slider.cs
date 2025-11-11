@@ -86,7 +86,7 @@ public class AutoScrollbarController : MonoBehaviour
             }
 
             if (statusText != null)
-                statusText.text = "運行中… (按空白鍵暫停)";
+                statusText.text = "運行中… (按空白鍵停止)";
         }
         else
         {
