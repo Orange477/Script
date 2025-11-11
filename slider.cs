@@ -74,15 +74,7 @@ public class AutoScrollbarController : MonoBehaviour
         
     }
 
-   /* void Start()
-{
-    if (targetCanvas == null)
-        targetCanvas = GetComponentInParent<Canvas>();
 
-    StartMoving();
-    if (statusText != null)
-        statusText.text = "運行中… (按空白鍵暫停)";
-}*/
     void Update()
     {
         // 空白鍵切換 播放 / 暫停
@@ -92,28 +84,6 @@ public class AutoScrollbarController : MonoBehaviour
         }
     }
 
-    // ──────────────────────────────────────
-    // 公開方法：外部呼叫（例如按鈕）
-    // ──────────────────────────────────────
-    /*public void TogglePause()
-    {
-        isMoving = !isMoving;
-
-        if (isMoving)
-            StartMoving();
-        else
-            StopMoving();
-
-        // 暫停時立刻更新區間文字
-        UpdateRangeText();
-
-        // 運行中只顯示「運行中…」
-
-        if (isMoving && statusText != null)
-            statusText.text = "運行中… (按空白鍵暫停)";
-        else
-            statusText.text = $"{currentRangeText}";
-    }*/
 
     public void TogglePause()
     {
@@ -159,9 +129,6 @@ public class AutoScrollbarController : MonoBehaviour
         StartMoving();
     }
 
-    // ──────────────────────────────────────
-    // 內部協程
-    // ──────────────────────────────────────
     private void StartMoving()
     {
         if (moveRoutine != null) StopCoroutine(moveRoutine);
@@ -219,9 +186,6 @@ public class AutoScrollbarController : MonoBehaviour
         }
     }
 
-    // ──────────────────────────────────────
-    // 編輯器小工具：Play 模式下直接測試
-    // ──────────────────────────────────────
 #if UNITY_EDITOR
     [ContextMenu("Play/Pause")]
     private void EditorToggle() => TogglePause();
