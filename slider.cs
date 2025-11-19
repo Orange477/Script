@@ -1,4 +1,4 @@
-using UnityEngine;
+/*using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
 
@@ -67,8 +67,110 @@ public class AutoScrollbarController : MonoBehaviour
         {
             TogglePause();
         }
+    }*/
+    
+using UnityEngine;
+using UnityEngine.UI;
+using System.Collections;
+using Leap;
+using Leap.Unity;
+
+[RequireComponent(typeof(Scrollbar))]
+public class AutoScrollbarController : MonoBehaviour
+{
+    // ====== 新增：Leap Provider 參考 ======
+    [Header("Leap Motion")]
+    public LeapServiceProvider leapProvider;
+
+    // 你原本的欄位...
+    public Text statusText;
+    public Text rangeDisplayText;
+    public float moveSpeed = 0.7f;
+    public bool pingPong = true;
+
+    public Canvas targetCanvas;
+    public float autoCloseDelay = 2f;
+
+    private Scrollbar scrollbar;
+    private Coroutine moveRoutine;
+    private bool isMoving = true;
+    private bool hasFirstPaused = false;
+    private bool isClosing = false;
+    private string currentRangeText = "";
+
+    void Awake()
+    {
+        scrollbar = GetComponent<Scrollbar>();
     }
 
+    void Start()
+    {
+        if (leapProvider == null)
+            leapProvider = FindObjectOfType<LeapServiceProvider>();
+
+        if (targetCanvas == null)
+            targetCanvas = GetComponentInParent<Canvas>();
+
+        StartMoving();
+
+        if (statusText != null)
+            statusText.text = "運行中… (握拳停止)";
+    }
+
+    void Update()
+    {
+        // 1. 先拿到目前的 Frame 與手
+        if (leapProvider == null || leapProvider.CurrentFrame == null)
+            return;
+
+        Frame frame = leapProvider.CurrentFrame;
+        if (frame.Hands.Count == 0)
+            return;
+
+        Hand hand = frame.Hands[0];   // 先用第一隻手
+
+        // 2. 偵測「握拳」→ 呼叫 TogglePause()
+        if (IsClosedFist(hand))
+        {
+            // 為了避免一握拳就每幀都觸發，可以加個簡單防抖：
+            // 這裡用「只要狀態有變化才觸發」的邏輯，你也可以自己用 bool 紀錄前一幀狀態
+            TogglePause();
+        }
+    }
+
+    // ====== 手勢判斷：握拳 ======
+    private bool IsClosedFist(Hand hand)
+    {
+        // 非拇指手指都要彎曲 (沒伸直)
+        foreach (Finger finger in hand.Fingers)
+        {
+            if (finger.Type == Finger.FingerType.TYPE_THUMB)
+                continue;
+
+            if (finger.IsExtended)
+                return false;
+        }
+        return true;
+    }
+
+    // ====== 下面都是你原本的程式（內容不變） ======
+
+    private void UpdateRangeText()
+    {
+        float v = scrollbar.value;
+        string result = "未知";
+
+        if (v >= 0.0f && v <= 0.135f) result = "沒什麼味道...?";
+        else if (v > 0.135f && v <= 0.343f) result = "好像有點淡...";
+        else if (v > 0.343f && v <= 0.66f) result = "完美";
+        else if (v > 0.66f && v <= 0.87f) result = "好像多了點...";
+        else if (v > 0.87f && v <= 1.0f) result = "太多啦!!!";
+
+        currentRangeText = result;
+
+        if (rangeDisplayText != null)
+            rangeDisplayText.text = result;
+    }
 
     public void TogglePause()
     {
