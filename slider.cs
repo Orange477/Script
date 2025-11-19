@@ -171,6 +171,16 @@ public class AutoScrollbarController : MonoBehaviour
         if (rangeDisplayText != null)
             rangeDisplayText.text = result;
     }
+    private int GetSeasoningLevel()
+    {
+        float v = scrollbar.value;
+
+        if (v >= 0.0f  && v <= 0.135f) return 0; // 沒什麼味道...?
+        if (v > 0.135f && v <= 0.343f) return 1; // 好像有點淡...
+        if (v > 0.343f && v <= 0.66f)  return 2; // 完美
+        if (v > 0.66f  && v <= 0.87f)  return 3; // 好像多了點...
+        return 4;                                  // 太多啦!!!
+    }
 
     public void TogglePause()
     {

@@ -129,11 +129,28 @@ public class HintSequencer : MonoBehaviour
     {
         // 等待指定的秒數
         yield return new WaitForSeconds(duration);
-        
+
         // 隱藏祝賀訊息
         if (congratsTextComponent != null)
         {
             congratsTextComponent.gameObject.SetActive(false);
         }
     }
+    public string GetFinalDishComment()
+    {
+        int level = GetSeasoningLevel();
+
+        switch (level)
+        {
+            case 0: return "幾乎沒味道，客人覺得很失望。";
+            case 1: return "有一點味道，但整體偏淡，差強人意。";
+            case 2: return "調味剛剛好，料理大受好評！";
+            case 3: return "有點太重口味了，不是每個人都喜歡。";
+            case 4: return "超級鹹／超級重口味，客人吃不太下。";
+            default: return "料理評價異常。";
+        }
+        finalResultText.text = dishComment;
+    }
+
+
 }
