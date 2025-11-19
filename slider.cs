@@ -278,7 +278,9 @@ public class SeasoningMiniGame : MonoBehaviour
     void Update()
     {
         // 只有在小遊戲啟動 + 手勢啟用時才處理
-        if (!isActive || !isHandGestureEnabled) 
+        //if (!isActive || !isHandGestureEnabled) 
+        //    return;
+        if (!isActive)
             return;
 
         if (leapProvider == null || leapProvider.CurrentFrame == null) 
@@ -359,7 +361,7 @@ public class SeasoningMiniGame : MonoBehaviour
             statusText.text = $"{currentRangeText} (2秒後結束)";
 
         // 3. 立即關閉手勢偵測（避免誤觸）
-        isHandGestureEnabled = false;
+        //isHandGestureEnabled = false;
 
         // 4. 第一次暫停：啟動自動結束
         if (!hasPaused)
