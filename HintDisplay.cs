@@ -18,6 +18,7 @@ public class HintSequencer : MonoBehaviour
     // 用來控制顯示/隱藏的計時器 (保留在 Update 中使用，但建議改用協程處理計時)
     private float timer = 0f;
     private bool isDisplaying = false;
+    public AutoScrollbarController sliderController;
 
     // =========================================================
     // 遊戲啟動時自動開始序列
@@ -85,6 +86,7 @@ public class HintSequencer : MonoBehaviour
     // =========================================================
     public void ShowHint(string message, float duration)
     {
+        Debug.Log("➡ [ShowHint] HintText active? " + hintTextComponent.gameObject.activeInHierarchy);
         if (hintTextComponent == null)
         {
             Debug.LogError("HintTextComponent 未設定！請在 Inspector 中拖曳元件。");
@@ -104,7 +106,7 @@ public class HintSequencer : MonoBehaviour
     {
         if (hintTextComponent != null)
         {
-            hintTextComponent.gameObject.SetActive(false);
+            hintTextComponent.text = "";
         }
         isDisplaying = false;
         timer = 0f;
@@ -117,40 +119,39 @@ public class HintSequencer : MonoBehaviour
             return;
         }
 
-        // 停止可能正在執行的舊祝賀協程，避免閃爍或計時錯誤
-        StopAllCoroutines();
+        // ✅ 改成只停止「這個文字的協程」
+        StopCoroutine(nameof(AutoFadeCongrats));
 
         congratsTextComponent.text = message;
         congratsTextComponent.gameObject.SetActive(true);
 
-        
+        StartCoroutine(AutoFadeCongrats(duration));
     }
     IEnumerator AutoFadeCongrats(float duration)
     {
         // 等待指定的秒數
         yield return new WaitForSeconds(duration);
-
+        
         // 隱藏祝賀訊息
         if (congratsTextComponent != null)
         {
             congratsTextComponent.gameObject.SetActive(false);
         }
     }
+
     public string GetFinalDishComment()
     {
-        int level = GetSeasoningLevel();
-
+        string level = sliderController.UpdateRangeText();
+        
         switch (level)
         {
-            case 0: return "幾乎沒味道，客人覺得很失望。";
-            case 1: return "有一點味道，但整體偏淡，差強人意。";
-            case 2: return "調味剛剛好，料理大受好評！";
-            case 3: return "有點太重口味了，不是每個人都喜歡。";
-            case 4: return "超級鹹／超級重口味，客人吃不太下。";
+            case "沒什麼味道...?": return "幾乎沒味道，客人覺得很失望。";
+            case "好像有點淡...": return "有一點味道，但整體偏淡，差強人意。";
+            case "完美": return "調味剛剛好，料理大受好評！";
+            case "好像多了點...": return "有點太重口味了，不是每個人都喜歡。";
+            case "太多啦!!!": return "超級鹹／超級重口味，客人吃不太下。";
             default: return "料理評價異常。";
         }
-        finalResultText.text = dishComment;
+
     }
-
-
 }
