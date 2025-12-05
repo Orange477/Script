@@ -10,7 +10,7 @@ public class HintSequencer : MonoBehaviour
 
     [Header("提示文字內容")]
     public string firstMessage = "歡迎來到廚房模擬世界!";
-    public string secondMessage = "請把手移動到物品上面。";
+    public string secondMessage = "請把手移動到畫面上!";
 
     // 固定顯示時間
     public float messageDuration = 5.0f; 
@@ -139,7 +139,23 @@ public class HintSequencer : MonoBehaviour
         }
     }
 
-    public string GetFinalDishComment()
+    public string GetFinalDishCommentSalt()
+    {
+        string level = sliderController.UpdateRangeText();
+        
+        switch (level)
+        {
+            case "沒什麼味道...?": return "幾乎沒味道，客人覺得很失望。";
+            case "好像有點淡...": return "有一點味道，但整體偏淡，差強人意。";
+            case "完美": return "調味剛剛好，料理大受好評！";
+            case "好像多了點...": return "有點太重口味了，不是每個人都喜歡。";
+            case "太多啦!!!": return "超級鹹／超級重口味，客人吃不太下。";
+            default: return "料理評價異常。";
+        }
+
+    }
+
+    public string GetFinalDishCommentPepper()
     {
         string level = sliderController.UpdateRangeText();
         
