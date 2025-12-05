@@ -1,54 +1,33 @@
 using UnityEngine;
-using Leap.Unity.Interaction;
+using Leap.Unity.Interaction; // 假設您使用 Leap Motion
 
 // 假設這個腳本是掛在 "蛋殼" 物件上
 public class EggCrackTrigger : MonoBehaviour
 {
-    // 不再需要手部相關的 public 變數，因為我們判斷的是自身的位移
-    // [Header("手部與手模型")]
-    // public InteractionHand hand;
-    // public Transform handTransform; // 不再需要，直接使用 transform
+    // 【新增】流程管理器參考
+    [Header("流程管理器")]
+    public ItemPrompt itemPromptManager; // 將 ItemPrompt 腳本所在的物件拖曳到此欄位
 
     [Header("打蛋後的設定")]
     public GameObject uncookedEggPrefab; // 打開後流出的蛋液 Prefab
-    public Transform panTransform;       // 鍋子的位置 (通常在遊戲開始時由抓取管理器或環境設定)
+    public Transform panTransform;       // 鍋子的位置 
     
     [Header("移動速度閾值 (絕對值)")]
-    // 當 Y 軸速度的絕對值超過此值時，觸發打蛋。
-    // 數值越小越靈敏。建議值：1.0f 到 5.0f。
     public float movementThreshold = 3.0f; 
 
     private bool isCracked = false;
-    private Vector3 lastPos; // 儲存上次自身的位置
-    private float lastTime;  // 儲存上次的時間
-
-    // 注意：isEggInHand 和 grabPoint 不再需要，因為如果腳本在蛋上，就代表它現在是蛋
+    private Vector3 lastPos; 
+    private float lastTime;  
 
     void Start()
     {
-        // 初始化位置和時間
         lastPos = transform.position;
         lastTime = Time.time;
-
-        // 【重要】如果 panTransform 是由另一個物件提供的，請確保它被正確賦值。
-        // 如果您希望這個腳本能自動找到鍋子，請使用以下方法：
-        // if (panTransform == null)
-        // {
-        //     GameObject pan = GameObject.FindWithTag("Pan");
-        //     if (pan != null)
-        //     {
-        //         panTransform = pan.transform;
-        //     }
-        // }
     }
 
     void Update()
     {
-        if (isCracked)
-        {
-            // Debug.Log("蛋已打出");
-            return;
-        }
+        if (isCracked) return;
 
         // 偵測蛋是否有顯著移動
         if (DetectAnySignificantMovement())
@@ -66,7 +45,6 @@ public class EggCrackTrigger : MonoBehaviour
     /// </summary>
     bool DetectAnySignificantMovement()
     {
-        // Debug.Log("打蛋偵測執行中 (偵測自身移動)");
         Vector3 currentPos = transform.position;
         float currentTime = Time.time;
 
@@ -75,12 +53,8 @@ public class EggCrackTrigger : MonoBehaviour
             float deltaTime = currentTime - lastTime;
             if (deltaTime > 0)
             {
-                // 計算 Y 軸速度
                 float velocityY = (currentPos.y - lastPos.y) / deltaTime;
                 
-                // Debug.Log($"velocityY: {velocityY}, Absolute: {Mathf.Abs(velocityY)}");
-
-                // 檢查速度的**絕對值**是否超過閾值 (向上或向下快速移動都算)
                 if (Mathf.Abs(velocityY) > movementThreshold)
                 { 
                     Debug.Log($"觸發移動！速度: {velocityY}");
@@ -88,7 +62,6 @@ public class EggCrackTrigger : MonoBehaviour
                 }
             }
         }
-        
         return false;
     }
 
@@ -96,19 +69,47 @@ public class EggCrackTrigger : MonoBehaviour
     {
         Debug.Log("開打");
         if (isCracked) return;
-        isCracked = true;
+        isCracked = true;   
         
+        // 【修正點 1】: 將 spawnedEgg 宣告到方法頂部
+        GameObject spawnedEgg = null; 
+
         // 1. 生成打好的蛋液
         if (uncookedEggPrefab != null && panTransform != null)
         {
-            // 在鍋子的位置生成打好的蛋液
-            Instantiate(uncookedEggPrefab, panTransform.position, Quaternion.identity);
+            spawnedEgg = Instantiate(uncookedEggPrefab, panTransform.position, Quaternion.identity);
         }
         
-        // 2. 銷毀或隱藏自身 (蛋殼)
-        // 如果這個腳本是掛在蛋殼上，銷毀它即可
+        // 2. 銷毀蛋殼
+        // 不需要遷移 ItemPrompt，因為它已經在 Ladle 上了。
         Destroy(gameObject); 
-
         Debug.Log("蛋已打入鍋中，蛋殼銷毀！");
+
+        // 3. 找到湯勺控制器並賦予蛋的參考 (LadleController 和 ItemPrompt 在同一個物件上)
+        // 我們需要確保 LadleController 能夠被找到
+        LadleController ladleController = FindObjectOfType<LadleController>();
+
+        if (ladleController != null && spawnedEgg != null)
+        {
+            // 傳遞生成的蛋液物件的 Transform 給 LadleController
+            ladleController.eggToFlip = spawnedEgg.transform;
+            Debug.Log("已將新蛋液的參考傳遞給湯勺控制器。");
+        }
+        else
+        {
+            Debug.LogError("LadleController 或生成的蛋液遺失，無法傳遞翻面參考。");
+        }
+
+        // 4. 觸發 Ladle 上的 ItemPrompt 流程
+        if (itemPromptManager != null)
+        {
+            // itemPromptManager 現在指向 Ladle 上的 ItemPrompt.cs
+            itemPromptManager.OnEggCracked(); 
+            Debug.Log("已呼叫 ItemPrompt.OnEggCracked() 啟動調味流程。");
+        }
+        else
+        {
+            Debug.LogError("ItemPrompt Manager (Ladle) 參考遺失，無法啟動流程。");
+        }
     }
 }
