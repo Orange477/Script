@@ -7,6 +7,9 @@ public class ItemPrompt : MonoBehaviour
     [Header("UI 控制器")]
     public HintSequencer hintSequencer;
 
+    [Header("互動流程控制")]
+    public bool canStartFlipping = false; // 預設為 False
+
     // 【修正】將 slider 替換為正確的類別名稱 AutoScrollbarController
     [Header("調味滑軌控制器")]
     public AutoScrollbarController flavoringUI;
@@ -23,7 +26,10 @@ public class ItemPrompt : MonoBehaviour
     private bool isResetting = false; // 【防抖邏輯】標記是否正在重置計時器
     private bool isResettingfinishing = false;
     private string finalresult;
+    private bool isPeppershowed = false;
     
+    private bool isFlavoringComplete = false;
+    public LadleController ladleController;
     
 
     // Start is called before the first frame update
@@ -34,6 +40,7 @@ public class ItemPrompt : MonoBehaviour
         {
              flavoringUI.targetCanvas.gameObject.SetActive(false);
         }
+        FindObjectOfType<GameTimer>().StartTimer();
     }
 
     // Update is called once per frame
@@ -95,7 +102,7 @@ public class ItemPrompt : MonoBehaviour
                 // 顯示提示文字
             if (!promptIsActive)
             {
-                    hintSequencer.ShowHint("請將手保持在物品上五秒。", 9999f);
+                    hintSequencer.ShowHint("請先將手保持在畫面上五秒。", 9999f);
                     touchTimer = 0f; 
                     promptIsActive = true;
             }
@@ -144,48 +151,132 @@ public class ItemPrompt : MonoBehaviour
             hintSequencer.ShowHint("非常好!", 3.0f);
         }
         
-        yield return new WaitForSeconds(3.0f); 
+        yield return new WaitForSeconds(8.0f); 
 
         // 2. 顯示「接著來模擬調味!」 (停留 3 秒)
         if (hintSequencer != null)
         {
-            hintSequencer.ShowHint("接著來模擬調味!", 3.0f);
+            hintSequencer.ShowHint("接著來撒鹽巴!", 3.0f);
         }
 
         yield return new WaitForSeconds(3.0f); 
+
 
         // 3. 呼叫 slider.cs (AutoScrollbarController)
         Debug.Log("啟動調味滑軌！");
         if (flavoringUI != null)
         {
+            isFlavoringComplete = false; // 重置旗標
             // 啟用滑軌所在的 Canvas
             if (flavoringUI.targetCanvas != null)
             {
                 flavoringUI.targetCanvas.gameObject.SetActive(true);
                 hintSequencer.HideHint(); 
             }
+
+            flavoringUI.OnFlavoringFinished = () =>
+            {
+                Debug.Log("鹽巴調味結束，觸發結果提示！");
+                finalresult = hintSequencer.GetFinalDishCommentSalt();
+                
+                // 顯示結果提示 (3 秒)
+                
+                hintSequencer.ShowHint(finalresult, 3.0f); // 防止自動關閉邏輯干擾提示顯示
+                
+                StartCoroutine(DelayFlavoringComplete(3.0f)); 
+            };
+
             // 確保滑軌開始移動
             flavoringUI.ResetAndStart(); 
 
-            // 當滑軌完成時要做什麼11/25最後改動
-            flavoringUI.OnFlavoringFinished = () =>
-            {
-                Debug.Log("調味結束，觸發最終提示！");
-                finalresult = hintSequencer.GetFinalDishComment();
-                hintSequencer.ShowHint(finalresult, 3.0f);
-            };
+            
+            
             // 【修正】完成流程後，將 Isfivefinished 設回 false，避免流程重複觸發打蛋後的提示
             Isfivefinished = false; 
         }
         else
         {
             Debug.LogError("ItemPrompt 的 flavoringUI 欄位尚未指定！無法啟動調味滑軌。請在 Unity Inspector 中拖曳正確的物件。");
+            isFlavoringComplete = true; // 避免卡死，直接設為完成
         }
-        if (hintSequencer != null && Isfivefinished == false && flavoringUI.Isstopped == true)
+
+        yield return new WaitUntil(() => isFlavoringComplete);
+        // 【重要】鹽巴流程結束，禁用滑軌 UI，以防影響下一個流程
+        if (flavoringUI != null && flavoringUI.targetCanvas != null)
         {
-            finalresult = hintSequencer.GetFinalDishComment();
-            hintSequencer.ShowHint(finalresult, 3.0f);
+            flavoringUI.targetCanvas.gameObject.SetActive(false);
         }
+        hintSequencer.HideHint(); // 確保結果提示隱藏
+
+        // 撒胡椒粉
+        if (hintSequencer != null )
+        {
+            Debug.Log("接著來撒胡椒粉!");
+            hintSequencer.ShowHint("接著來撒胡椒粉!", 3.0f);
+        }
+
+        yield return new WaitForSeconds(3.0f);
+        isPeppershowed = true;
+
+        Debug.Log("啟動調味滑軌！");
+        if (flavoringUI != null && isPeppershowed) 
+        {
+            isFlavoringComplete = false; // 重置旗標
+
+            // 啟用滑軌所在的 Canvas
+            if (flavoringUI.targetCanvas != null)
+            {
+                flavoringUI.rangeDisplayText.text = "請撒胡椒粉!";
+                flavoringUI.targetCanvas.gameObject.SetActive(true);
+                hintSequencer.HideHint(); 
+            }
+
+            // 設置撒胡椒完成後的回呼
+            flavoringUI.OnFlavoringFinished = () =>
+            {
+                Debug.Log("胡椒調味結束，觸發結果提示！");
+
+                finalresult = hintSequencer.GetFinalDishCommentPepper();
+                
+                // 顯示結果提示 (3 秒)
+                hintSequencer.ShowHint(finalresult, 3.0f); // 防止自動關閉邏輯干擾提示顯示
+                
+                
+                // 【重要】在提示顯示完 3 秒後，才將旗標設為 true
+                StartCoroutine(DelayFlavoringComplete(3.0f));
+            };
+
+            // 確保滑軌開始移動
+            flavoringUI.ResetAndStart(); 
+        }
+        else
+        {
+            Debug.LogError("ItemPrompt 的 flavoringUI 欄位尚未指定！無法啟動調味滑軌。請在 Unity Inspector 中拖曳正確的物件。");
+        }
+
+        // 【新增】等待胡椒調味流程完全結束 (包括 3 秒結果提示)
+        yield return new WaitUntil(() => isFlavoringComplete);
+        
+        // 【收尾】流程完全結束，禁用滑軌 UI
+        if (flavoringUI != null && flavoringUI.targetCanvas != null)
+        {
+            flavoringUI.targetCanvas.gameObject.SetActive(false);
+        }
+        hintSequencer.HideHint(); 
+        // 【重要新增】在所有調味流程結束後，啟用翻面功能
+        canStartFlipping = true; 
+        if(hintSequencer != null )
+        {
+            hintSequencer.ShowHint("調味完成!", 3.0f);
+        }
+        Debug.Log("所有調味流程結束。**翻面功能已啟用**。");
+        yield return new WaitForSeconds(6.0f); 
+        hintSequencer.ShowHint("現在請用湯勺試著將蛋翻面吧！", 3.0f);
     }
-    
+    // 幫助延遲設置旗標的協程
+    private IEnumerator DelayFlavoringComplete(float delayTime)
+    {
+        yield return new WaitForSeconds(delayTime);
+        isFlavoringComplete = true;
+    }
 }
